@@ -48,8 +48,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
     const node = e.target;
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
-    const newWidth = Math.max(50, node.width() * scaleX);
-    const newHeight = Math.max(50, node.height() * scaleY);
+    const newWidth = Math.max(30, node.width() * scaleX);
+    const newHeight = Math.max(20, node.height() * scaleY);
     
     // reset scale to 1 and update width/height natively for pure Konva Text reflow
     node.scaleX(1);
@@ -198,7 +198,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     boundBoxFunc={(oldBox: any, newBox: any) => {
                       // limit shrink
-                      if (newBox.width < 50 || newBox.height < 50) {
+                      if (newBox.width < 30 || newBox.height < 20) {
                         return oldBox;
                       }
                       return newBox;
