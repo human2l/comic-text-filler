@@ -27,6 +27,7 @@ export default function Home() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [jsonInput, setJsonInput] = useState<string>(defaultJSON);
   const [globalFontSize, setGlobalFontSize] = useState<number>(44);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   
   // Initially we parse default json to texts 
   const [texts, setTexts] = useState<ComicText[]>(JSON.parse(defaultJSON) as ComicText[]);
@@ -127,6 +128,26 @@ export default function Home() {
                 className="w-full accent-blue-600"
               />
             </div>
+
+            {selectedId && (
+              <div className="mb-4 p-4 bg-orange-50 border border-orange-100 rounded-lg">
+                <label className="flex justify-between text-sm font-medium text-orange-800 mb-2">
+                  <span>Selected Text Size</span>
+                  <span className="font-bold">{texts.find(t => t.id === selectedId)?.fontSize || globalFontSize}px</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  value={texts.find(t => t.id === selectedId)?.fontSize || globalFontSize} 
+                  onChange={(e) => {
+                    const newSize = parseInt(e.target.value);
+                    setTexts(texts.map(t => t.id === selectedId ? { ...t, fontSize: newSize } : t));
+                  }}
+                  className="w-full accent-orange-600"
+                />
+              </div>
+            )}
             
             <button 
               onClick={parseJsonTexts}
@@ -141,7 +162,14 @@ export default function Home() {
         {/* Workspace: Renderer */}
         <div className="w-full xl:w-2/3 flex flex-col items-center justify-center min-h-0 bg-gray-200/50 p-4 rounded-3xl border border-gray-300/50 flex-1 relative overflow-hidden">
            <div className="w-full h-full flex items-center justify-center overflow-auto">
-             <ComicCanvas imageSrc={imageSrc} texts={texts} setTexts={setTexts} globalFontSize={globalFontSize} />
+             <ComicCanvas 
+                imageSrc={imageSrc} 
+                texts={texts} 
+                setTexts={setTexts} 
+                globalFontSize={globalFontSize} 
+                selectedId={selectedId} 
+                setSelectedId={setSelectedId} 
+             />
            </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Konva from 'konva';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Image as KonvaImage, Layer, Stage, Text, Transformer } from 'react-konva';
 import useImage from 'use-image';
 
@@ -20,15 +20,16 @@ interface ComicCanvasProps {
   texts: ComicText[];
   setTexts: React.Dispatch<React.SetStateAction<ComicText[]>>;
   globalFontSize: number;
+  selectedId: string | null;
+  setSelectedId: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize }: ComicCanvasProps) {
+export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize, selectedId, setSelectedId }: ComicCanvasProps) {
   // Use 'anonymous' string for Cross-Origin resource sharing if using external URLs 
   const [image] = useImage(imageSrc || '', 'anonymous');
   
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const [selectedId, selectShape] = useState<string | null>(null);
   
   // Keep track of the original image dimensions. Fallback to 600x800 if empty.
   const width = image?.width || 600;
@@ -76,7 +77,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
     const clickedOnEmpty = e.target === e.target.getStage();
     const clickedOnImage = e.target.attrs.image;
     if (clickedOnEmpty || clickedOnImage) {
-      selectShape(null);
+      setSelectedId(null);
     }
   };
 
@@ -161,9 +162,9 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
                     x={textItem.x}
                     y={textItem.y}
                     draggable
-                    onClick={() => selectShape(textItem.id)}
-                    onTap={() => selectShape(textItem.id)}
-                    onDragStart={() => selectShape(textItem.id)}
+                    onClick={() => setSelectedId(textItem.id)}
+                    onTap={() => setSelectedId(textItem.id)}
+                    onDragStart={() => setSelectedId(textItem.id)}
                     onDragEnd={(e) => handleDragEnd(textItem.id, e)}
                     onTransform={handleTransform}
                     onTransformEnd={handleTransformEnd}
