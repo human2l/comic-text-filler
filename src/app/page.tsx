@@ -30,17 +30,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDraggingOverRenderer, setIsDraggingOverRenderer] = useState<boolean>(false);
   
-  // Initially we parse default json to texts 
   const [texts, setTexts] = useState<ComicText[]>(JSON.parse(defaultJSON) as ComicText[]);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Local URL for previewing, perfectly fine for single session web apps
-      const url = URL.createObjectURL(file);
-      setImageSrc(url);
-    }
-  };
 
   const handleRendererDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -128,27 +118,8 @@ export default function Home() {
         {/* Workspace: Control Panel */}
         <div className="w-full xl:w-1/3 flex flex-col gap-4 overflow-y-auto md:pr-2">
           
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition hover:shadow-md">
-            <h2 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm">1</span> 
-              Load Background
-            </h2>
-            <div className="relative border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-6 flex justify-center hover:bg-gray-100 hover:border-blue-400 transition cursor-pointer">
-               <input 
-                 type="file" 
-                 accept="image/*" 
-                 onChange={handleImageUpload}
-                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-               />
-               <span className="text-sm font-medium text-gray-500 text-center pointer-events-none">
-                 Drag & Drop your blank comic pane here <br/> <span className="text-xs font-normal">.png / .webp / .jpeg</span>
-               </span>
-            </div>
-          </div>
-
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition hover:shadow-md flex-1 flex flex-col">
             <h2 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm">2</span> 
               Inject Dialogue
             </h2>
             <p className="text-xs text-gray-500 mb-3 font-medium">Paste the JSON script directly from the language model</p>
