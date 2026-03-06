@@ -10,16 +10,18 @@ const ComicCanvas = dynamic(() => import('@/components/ComicCanvas'), {
   loading: () => <div className="flex h-64 items-center justify-center text-gray-400">Loading Drawing Canvas...</div>
 });
 
-const defaultJSON = `[
-  { "id": "t1", "text": "但如果是你消失了，\\n我的世界会彻底停\\n转的。", "x": 160, "y": 120 }, 
-  { "id": "t2", "text": "在浩瀚的宇宙里，我们或许渺小。", "x": 80, "y": 910 }
-]`;
+const defaultJSON = `{
+  "Yier": "但如果是你消失了，\\n我的世界会彻底停转的。",
+  "Narration": "在浩瀚的宇宙里，我们或许渺小。"
+}`;
 
 interface ComicText {
   id: string;
   text: string;
   x: number;
   y: number;
+  width?: number;
+  height?: number;
   fontSize?: number;
 }
 
@@ -30,7 +32,20 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDraggingOverRenderer, setIsDraggingOverRenderer] = useState<boolean>(false);
   
-  const [texts, setTexts] = useState<ComicText[]>(JSON.parse(defaultJSON) as ComicText[]);
+  const [texts, setTexts] = useState<ComicText[]>(() => {
+    try {
+      const parsed = JSON.parse(defaultJSON);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return Object.entries(parsed).map(([key, val], idx) => ({
+           id: key,
+           text: val as string,
+           x: 100,
+           y: 100 + Number(idx) * 150
+        }));
+      }
+    } catch {}
+    return [];
+  });
 
   const handleRendererDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -59,23 +74,32 @@ export default function Home() {
     try {
       const parsed = JSON.parse(newVal);
       if (Array.isArray(parsed)) {
-        // Map to ensure properties but preserve others
-        const enhancedTexts = parsed.map((item, index) => ({
-          ...item,
-          text: item.text,
-          x: item.x || 100,
-          y: item.y || 100 + (index * 150),
-          id: item.id || ('text-' + index)
+        setTexts(prevTexts => parsed.map((item, index) => {
+          const id = item.id || ('text-' + index);
+          const existing = prevTexts.find(t => t.id === id);
+          return {
+            id,
+            text: typeof item.text === 'string' ? item.text : JSON.stringify(item.text || ''),
+            x: existing?.x ?? (item.x || 100),
+            y: existing?.y ?? (item.y || 100 + Number(index) * 150),
+            width: existing?.width ?? item.width,
+            height: existing?.height ?? item.height,
+            fontSize: existing?.fontSize ?? item.fontSize
+          };
         }));
-        setTexts(enhancedTexts);
       } else if (typeof parsed === 'object' && parsed !== null) {
-        const keyVals = Object.entries(parsed).map(([key, val], idx) => ({
-           id: key,
-           text: val as string,
-           x: 100,
-           y: 100 + Number(idx) * 150
+        setTexts(prevTexts => Object.entries(parsed).map(([key, val], idx) => {
+           const existing = prevTexts.find(t => t.id === key);
+           return {
+             id: key,
+             text: typeof val === 'string' ? val : JSON.stringify(val),
+             x: existing?.x ?? 100,
+             y: existing?.y ?? 100 + Number(idx) * 150,
+             width: existing?.width,
+             height: existing?.height,
+             fontSize: existing?.fontSize
+           };
         }));
-        setTexts(keyVals);
       }
     } catch {
       // Silently fail if they are in the middle of typing invalid JSON syntax
@@ -92,19 +116,31 @@ export default function Home() {
 
     try {
       const parsedInput = JSON.parse(jsonInput);
-      // If the texts update was triggered by typing in the json box, their stringified
-      // versions will match. We break early to completely avoid re-formatting the input 
-      // box and ruining the user's cursor position or manual newline space formatting.
-      if (JSON.stringify(parsedInput) === JSON.stringify(texts)) {
+      
+      let currentJsonRep: unknown;
+      if (Array.isArray(parsedInput)) {
+        currentJsonRep = texts.map(t => ({ id: t.id, text: t.text }));
+      } else {
+        currentJsonRep = texts.reduce((acc, t) => {
+          acc[t.id] = t.text;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+
+      // If the actual textual payload matches verbatim, don't clobber the user's manual JSON formatting
+      if (JSON.stringify(parsedInput) === JSON.stringify(currentJsonRep)) {
         return;
       }
+      
+      setJsonInput(JSON.stringify(currentJsonRep, null, 2));
     } catch {
       // If json is currently invalid syntax, proceed to forcefully correct it using current valid texts state.
+      const fallbackObj = texts.reduce((acc, t) => {
+        acc[t.id] = t.text;
+        return acc;
+      }, {} as Record<string, string>);
+      setJsonInput(JSON.stringify(fallbackObj, null, 2));
     }
-
-    // Since it didn't match the input box, this state change must have originated from 
-    // the Canvas UI (dragging, resizing) or Toolbar sliding! Reflect back to string format.
-    setJsonInput(JSON.stringify(texts, null, 2));
   }, [texts, jsonInput]);
 
   return (
