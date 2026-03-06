@@ -30,6 +30,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
   
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   
   // Keep track of the original image dimensions. Fallback to 600x800 if empty.
   const width = image?.width || 600;
@@ -56,6 +57,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
     node.scaleY(1);
     node.width(newWidth);
     node.height(newHeight);
+    
+    updatePopoverPos(); // Live sync UI during drag resize
   };
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
@@ -131,6 +134,33 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
     availableHeight / dimensions.height
   );
   
+  const updatePopoverPos = React.useCallback(() => {
+    if (!selectedId || !popoverRef.current || !stageRef.current) return;
+    const node = stageRef.current.findOne(`#${selectedId}`);
+    if (!node) return;
+
+    // getClientRect gets perfectly computed absolute physical pixel bounds (accounting for auto-wrapped text)
+    const box = node.getClientRect();
+    
+    let top = box.y - 55;
+    // If popover goes past top boundary, intelligently flip it below the text block using true height
+    if (top < 10) {
+      top = box.y + box.height + 15;
+    }
+    
+    let left = box.x;
+    const stageWidth = stageRef.current.width();
+    left = Math.max(10, Math.min(left, stageWidth - 180)); // 180 is approximate popover bounding width
+
+    popoverRef.current.style.left = `${left}px`;
+    popoverRef.current.style.top = `${top}px`;
+  }, [selectedId]);
+
+  React.useLayoutEffect(() => {
+    // Synchronize popover on text changes, selections, and window scaling
+    updatePopoverPos();
+  }, [selectedId, texts, scale, updatePopoverPos]);
+
   const selectedTextObj = texts.find(t => t.id === selectedId);
 
   return (
@@ -179,6 +209,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     onClick={() => setSelectedId(textItem.id)}
                     onTap={() => setSelectedId(textItem.id)}
                     onDragStart={() => setSelectedId(textItem.id)}
+                    onDragMove={updatePopoverPos}
                     onDragEnd={(e) => handleDragEnd(textItem.id, e)}
                     onTransform={handleTransform}
                     onTransformEnd={handleTransformEnd}
@@ -223,12 +254,12 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
             {/* Inline floating toolbar for selected text */}
             {selectedTextObj && (
               <div 
-                className="absolute bg-white/90 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-gray-200 rounded-xl p-2.5 flex items-center gap-2 z-10 transition-opacity"
+                ref={popoverRef}
+                className="absolute bg-white/95 backdrop-blur-md shadow-xl border border-gray-200 rounded-xl p-2.5 flex items-center gap-2 z-10"
                 style={{
-                  left: Math.max(10, Math.min(selectedTextObj.x * scale, (dimensions.width * scale) - 200)),
-                  top: selectedTextObj.y * scale - 55 < 0 
-                    ? selectedTextObj.y * scale + (selectedTextObj.height || 50) * scale + 15 
-                    : selectedTextObj.y * scale - 55,
+                   // initial visually hidden state to prevent flash before first layout effect
+                   top: '-999px',
+                   left: '-999px'
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
