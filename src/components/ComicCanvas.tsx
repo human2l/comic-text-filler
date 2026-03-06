@@ -95,8 +95,20 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
   const handleExport = () => {
     if (!stageRef.current) return;
     
+    // Hide transformer to prevent it from being rendered in the final image
+    if (transformerRef.current) {
+      transformerRef.current.hide();
+      transformerRef.current.getLayer()?.draw(); // Process hide synchronously
+    }
+    
     // Create a data URI of the canvas
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+    
+    // Restore transformer visibility
+    if (transformerRef.current) {
+      transformerRef.current.show();
+      transformerRef.current.getLayer()?.batchDraw();
+    }
     
     // Trigger download
     const link = document.createElement('a');
