@@ -28,6 +28,7 @@ export default function Home() {
   const [jsonInput, setJsonInput] = useState<string>(defaultJSON);
   const [globalFontSize, setGlobalFontSize] = useState<number>(44);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDraggingOverRenderer, setIsDraggingOverRenderer] = useState<boolean>(false);
   
   // Initially we parse default json to texts 
   const [texts, setTexts] = useState<ComicText[]>(JSON.parse(defaultJSON) as ComicText[]);
@@ -39,6 +40,26 @@ export default function Home() {
       const url = URL.createObjectURL(file);
       setImageSrc(url);
     }
+  };
+
+  const handleRendererDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOverRenderer(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setImageSrc(url);
+    }
+  };
+
+  const handleRendererDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOverRenderer(true);
+  };
+
+  const handleRendererDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOverRenderer(false);
   };
 
   const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -156,8 +177,17 @@ export default function Home() {
         </div>
 
         {/* Workspace: Renderer */}
-        <div className="w-full xl:w-2/3 flex flex-col items-center justify-center min-h-0 bg-gray-200/50 p-4 rounded-3xl border border-gray-300/50 flex-1 relative overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center overflow-auto">
+        <div 
+          className={`w-full xl:w-2/3 flex flex-col items-center justify-center min-h-0 p-4 rounded-3xl flex-1 relative overflow-hidden transition-all duration-200 ${
+            isDraggingOverRenderer 
+              ? 'bg-blue-50/80 border-4 border-dashed border-blue-400' 
+              : 'bg-gray-200/50 border border-gray-300/50'
+          }`}
+          onDrop={handleRendererDrop}
+          onDragOver={handleRendererDragOver}
+          onDragLeave={handleRendererDragLeave}
+        >
+           <div className="w-full h-full flex items-center justify-center overflow-auto pointer-events-auto">
              <ComicCanvas 
                 imageSrc={imageSrc} 
                 texts={texts} 
@@ -167,6 +197,18 @@ export default function Home() {
                 setSelectedId={setSelectedId} 
              />
            </div>
+           
+           {/* Drop Overlay visual feedback over the right side */}
+           {isDraggingOverRenderer && (
+             <div className="absolute inset-0 bg-blue-500/10 pointer-events-none flex items-center justify-center z-50 rounded-3xl">
+               <div className="bg-white/95 backdrop-blur px-8 py-6 rounded-2xl shadow-2xl font-bold text-blue-600 flex flex-col items-center animate-bounce">
+                 <svg className="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                 </svg>
+                 <span className="text-xl">Release image to load into Canvas</span>
+               </div>
+             </div>
+           )}
         </div>
       </div>
     </main>
