@@ -71,15 +71,15 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50 flex flex-col items-center py-10 font-[family-name:var(--font-geist-sans)]">
-      <header className="mb-10 text-center px-4 max-w-2xl mx-auto">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-2">Comic Text Filler</h1>
-        <p className="text-gray-500 font-medium">Auto-wraps, aligns and embeds structural LLM dialogue over your blank AI-generated comic panes.</p>
+    <main className="h-screen overflow-hidden bg-neutral-50 flex flex-col items-center p-4 md:p-6 font-[family-name:var(--font-geist-sans)]">
+      <header className="mb-4 md:mb-6 text-center px-4 max-w-2xl mx-auto flex-none">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-1">Comic Text Filler</h1>
+        <p className="text-xs md:text-sm text-gray-500 font-medium">Auto-wraps, aligns and embeds structural LLM dialogue over your blank AI-generated comic panes.</p>
       </header>
       
-      <div className="flex flex-col xl:flex-row gap-10 w-full max-w-7xl px-8">
+      <div className="flex flex-col xl:flex-row gap-4 md:gap-6 w-full max-w-7xl px-2 md:px-4 flex-1 min-h-0">
         {/* Workspace: Control Panel */}
-        <div className="w-full xl:w-1/3 flex flex-col gap-6">
+        <div className="w-full xl:w-1/3 flex flex-col gap-4 overflow-y-auto md:pr-2">
           
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition hover:shadow-md">
             <h2 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function Home() {
             </h2>
             <p className="text-xs text-gray-500 mb-3 font-medium">Paste the JSON script directly from the language model</p>
             <textarea
-              className="w-full flex-1 min-h-[300px] p-4 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-gray-700 leading-relaxed shadow-inner"
+              className="w-full flex-1 min-h-[150px] p-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-gray-700 leading-relaxed shadow-inner"
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               spellCheck={false}
@@ -122,8 +122,10 @@ export default function Home() {
         </div>
 
         {/* Workspace: Renderer */}
-        <div className="w-full xl:w-2/3 flex flex-col items-center justify-center min-h-[600px] bg-gray-200/50 p-6 rounded-3xl border border-gray-300/50">
-           <ComicCanvas imageSrc={imageSrc} texts={texts} setTexts={setTexts} />
+        <div className="w-full xl:w-2/3 flex flex-col items-center justify-center min-h-0 bg-gray-200/50 p-4 rounded-3xl border border-gray-300/50 flex-1 relative overflow-hidden">
+           <div className="w-full h-full flex items-center justify-center overflow-auto">
+             <ComicCanvas imageSrc={imageSrc} texts={texts} setTexts={setTexts} />
+           </div>
         </div>
       </div>
     </main>
