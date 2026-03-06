@@ -11,6 +11,7 @@ interface ComicText {
   x: number;
   y: number;
   width?: number;
+  height?: number;
   fontSize?: number;
 }
 
@@ -42,15 +43,18 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
 
   const handleTransform = (e: Konva.KonvaEventObject<Event>) => {
     // This runs continuously DURING the drag.
-    // Transfomer changes scale, we need to convert it back to width for native text wrap natively
+    // Transfomer changes scale, we need to convert it back to width/height natively
     const node = e.target;
     const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
     const newWidth = Math.max(50, node.width() * scaleX);
+    const newHeight = Math.max(50, node.height() * scaleY);
     
-    // reset scale to 1 and update width natively for pure Konva Text reflow
+    // reset scale to 1 and update width/height natively for pure Konva Text reflow
     node.scaleX(1);
     node.scaleY(1);
     node.width(newWidth);
+    node.height(newHeight);
   };
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
@@ -61,7 +65,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
         ...t, 
         x: node.x(), 
         y: node.y(),
-        width: node.width() // At this point, node.width() is already the real new width because of handleTransform
+        width: node.width(), // At this point, node.width() & height() are already the real new bounds because of handleTransform
+        height: node.height()
       } : t
     ));
   };
@@ -167,7 +172,9 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
                     fontStyle="bold"
                     fill="#2c221b" // Dark brown/grey matching the comic tone
                     width={textItem.width || 450} // Defaults to 450 unless transformed
+                    height={textItem.height} // Auto-height if undefined
                     align="left" // The reference image uses left alignment for multi-line bubbles
+                    verticalAlign="top"
                     lineHeight={1.4}
                   />
                 ))}
@@ -178,12 +185,13 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     boundBoxFunc={(oldBox: any, newBox: any) => {
                       // limit shrink
-                      if (newBox.width < 50) {
+                      if (newBox.width < 50 || newBox.height < 50) {
                         return oldBox;
                       }
                       return newBox;
                     }}
-                    enabledAnchors={['middle-left', 'middle-right']} // Only allow horizontal width changes
+                    enabledAnchors={['bottom-right']} // Only allow bottom right resize
+                    keepRatio={false} // Let the user resize width and height independently
                     rotateEnabled={false} // Disable rotation for cleaner typography bounds
                   />
                 )}
