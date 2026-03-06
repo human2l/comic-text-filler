@@ -206,6 +206,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     enabledAnchors={['bottom-right']} // Only allow bottom right resize
                     keepRatio={false} // Let the user resize width and height independently
                     rotateEnabled={false} // Disable rotation for cleaner typography bounds
+                    flipEnabled={false} // Prevent anchor inversion when dragging past bounds
                   />
                 )}
               </Layer>
