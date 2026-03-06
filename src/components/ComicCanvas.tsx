@@ -1,0 +1,115 @@
+"use client";
+
+import Konva from 'konva';
+import React, { useRef } from 'react';
+import { Image as KonvaImage, Layer, Stage, Text } from 'react-konva';
+import useImage from 'use-image';
+
+interface ComicCanvasProps {
+  imageSrc: string | null;
+  texts: { id: string; text: string; x: number; y: number }[];
+  setTexts: React.Dispatch<React.SetStateAction<{ id: string; text: string; x: number; y: number }[]>>;
+}
+
+export default function ComicCanvas({ imageSrc, texts, setTexts }: ComicCanvasProps) {
+  // Use 'anonymous' string for Cross-Origin resource sharing if using external URLs 
+  const [image] = useImage(imageSrc || '', 'anonymous');
+  
+  const stageRef = useRef<Konva.Stage>(null);
+  
+  // Keep track of the original image dimensions. Fallback to 600x800 if empty.
+  const width = image?.width || 600;
+  const height = image?.height || 800;
+  const dimensions = { width, height };
+  
+  const handleDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+    setTexts(texts.map(t => 
+      t.id === id ? { ...t, x: e.target.x(), y: e.target.y() } : t
+    ));
+  };
+
+  const handleExport = () => {
+    if (!stageRef.current) return;
+    
+    // Create a data URI of the canvas
+    const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+    
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = `comic_final_${Date.now()}.png`;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // We limit the max rendered UI width so it fits perfectly on screen
+  // But maintain intrinsic properties and scaling internally
+  const scale = imageSrc ? Math.min(1, 800 / dimensions.width) : 1;
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="mb-4">
+        <button 
+          onClick={handleExport} 
+          className="px-6 py-2 bg-blue-600 font-bold text-white rounded-lg shadow-md hover:bg-blue-700 transition active:bg-blue-800"
+        >
+          Export High-Res Image
+        </button>
+      </div>
+
+      {imageSrc ? (
+         <div 
+            className="border-2 border-dashed border-gray-400 shadow-xl bg-white overflow-hidden relative cursor-crosshair" 
+            style={{ 
+              width: dimensions.width * scale, 
+              height: dimensions.height * scale
+            }}
+          >
+            <Stage 
+              width={dimensions.width * scale} 
+              height={dimensions.height * scale} 
+              scaleX={scale} 
+              scaleY={scale}
+              ref={stageRef}
+            >
+              <Layer>
+                {/* 1. Underlying AI Comic Image */}
+                {image && (
+                  <KonvaImage image={image} width={dimensions.width} height={dimensions.height} />
+                )}
+                
+                {/* 2. Iterable Dynamic Text Bubbles */}
+                {texts.map((textItem) => (
+                  <Text
+                    key={textItem.id}
+                    id={textItem.id}
+                    text={textItem.text}
+                    x={textItem.x}
+                    y={textItem.y}
+                    draggable
+                    onDragEnd={(e) => handleDragEnd(textItem.id, e)}
+                    fontSize={36}
+                    fontFamily="'M PLUS Rounded 1c', 'Courier New', sans-serif"
+                    fill="#1a1a1a"
+                    stroke="#ffffff" // Subtle white outline for legibility usually
+                    strokeWidth={1}
+                    width={320} // Triggers Auto Word Wrap inside bubble limits
+                    align="center"
+                    lineHeight={1.3}
+                  />
+                ))}
+              </Layer>
+            </Stage>
+         </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center w-[600px] h-[800px] border-2 border-dashed border-gray-400 bg-gray-100 text-gray-400 rounded-xl">
+          <svg className="w-16 h-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-xl font-semibold opacity-70">Upload an image to start framing texts</span>
+        </div>
+      )}
+    </div>
+  );
+}
