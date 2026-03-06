@@ -41,37 +41,60 @@ export default function Home() {
     }
   };
 
-  const parseJsonTexts = () => {
+  const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newVal = e.target.value;
+    setJsonInput(newVal);
+    
     try {
-      const parsed = JSON.parse(jsonInput);
+      const parsed = JSON.parse(newVal);
       if (Array.isArray(parsed)) {
-        // We set new text states with auto generated X / Y coordinates if they don't have them
+        // Map to ensure properties but preserve others
         const enhancedTexts = parsed.map((item, index) => ({
           ...item,
           text: item.text,
           x: item.x || 100,
-          y: item.y || 100 + (index * 150), // Auto cascade down gracefully
-          id: item.id || ('text-' + Date.now() + '-' + Math.random()) // ensure ID
+          y: item.y || 100 + (index * 150),
+          id: item.id || ('text-' + index)
         }));
         setTexts(enhancedTexts);
-      } else {
-        // If they just provide a raw object of texts
-        if (typeof parsed === 'object') {
-             const keyVals = Object.entries(parsed).map(([key, val], idx) => ({
-                id: key,
-                text: val as string,
-                x: 100,
-                y: 100 + Number(idx) * 150
-             }));
-             setTexts(keyVals);
-        } else {
-             alert("JSON format not understood. Expected Array or Key-Value Map.");
-        }
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        const keyVals = Object.entries(parsed).map(([key, val], idx) => ({
+           id: key,
+           text: val as string,
+           x: 100,
+           y: 100 + Number(idx) * 150
+        }));
+        setTexts(keyVals);
       }
     } catch {
-      alert("Invalid JSON format. Please ensure it's valid JSON syntax.");
+      // Silently fail if they are in the middle of typing invalid JSON syntax
     }
   };
+
+  const prevTextsRef = React.useRef(texts);
+
+  // Two-way binding sync from texts to jsonInput
+  React.useEffect(() => {
+    // Only process if the actual text objects changed
+    if (prevTextsRef.current === texts) return;
+    prevTextsRef.current = texts;
+
+    try {
+      const parsedInput = JSON.parse(jsonInput);
+      // If the texts update was triggered by typing in the json box, their stringified
+      // versions will match. We break early to completely avoid re-formatting the input 
+      // box and ruining the user's cursor position or manual newline space formatting.
+      if (JSON.stringify(parsedInput) === JSON.stringify(texts)) {
+        return;
+      }
+    } catch {
+      // If json is currently invalid syntax, proceed to forcefully correct it using current valid texts state.
+    }
+
+    // Since it didn't match the input box, this state change must have originated from 
+    // the Canvas UI (dragging, resizing) or Toolbar sliding! Reflect back to string format.
+    setJsonInput(JSON.stringify(texts, null, 2));
+  }, [texts, jsonInput]);
 
   return (
     <main className="h-screen overflow-hidden bg-neutral-50 flex flex-col items-center p-4 md:p-6 font-[family-name:var(--font-geist-sans)]">
@@ -111,7 +134,7 @@ export default function Home() {
             <textarea
               className="w-full flex-1 min-h-[150px] p-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-gray-700 leading-relaxed shadow-inner"
               value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
+              onChange={handleJsonChange}
               spellCheck={false}
             />
             <div className="mb-4">
@@ -148,13 +171,6 @@ export default function Home() {
                 />
               </div>
             )}
-            
-            <button 
-              onClick={parseJsonTexts}
-              className="w-full px-4 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition active:scale-[98%]"
-            >
-              Parse Script & Refresh Canvas
-            </button>
           </div>
           
         </div>
