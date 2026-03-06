@@ -1,14 +1,23 @@
 "use client";
 
 import Konva from 'konva';
-import React, { useRef } from 'react';
-import { Image as KonvaImage, Layer, Stage, Text } from 'react-konva';
+import React, { useRef, useState } from 'react';
+import { Image as KonvaImage, Layer, Stage, Text, Transformer } from 'react-konva';
 import useImage from 'use-image';
+
+interface ComicText {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  width?: number;
+  fontSize?: number;
+}
 
 interface ComicCanvasProps {
   imageSrc: string | null;
-  texts: { id: string; text: string; x: number; y: number; fontSize?: number }[];
-  setTexts: React.Dispatch<React.SetStateAction<{ id: string; text: string; x: number; y: number; fontSize?: number }[]>>;
+  texts: ComicText[];
+  setTexts: React.Dispatch<React.SetStateAction<ComicText[]>>;
   globalFontSize: number;
 }
 
@@ -17,6 +26,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
   const [image] = useImage(imageSrc || '', 'anonymous');
   
   const stageRef = useRef<Konva.Stage>(null);
+  const transformerRef = useRef<Konva.Transformer>(null);
+  const [selectedId, selectShape] = useState<string | null>(null);
   
   // Keep track of the original image dimensions. Fallback to 600x800 if empty.
   const width = image?.width || 600;
@@ -28,6 +39,45 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
       t.id === id ? { ...t, x: e.target.x(), y: e.target.y() } : t
     ));
   };
+
+  const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    // Transfomer changes scale, we need to convert it back to width for native text wrap
+    const node = e.target;
+    const scaleX = node.scaleX();
+    
+    // reset scale to 1 and update width natively for pure Konva Text reflow
+    node.scaleX(1);
+    node.scaleY(1);
+
+    setTexts(texts.map(t => 
+      t.id === node.id() ? { 
+        ...t, 
+        x: node.x(), 
+        y: node.y(),
+        width: Math.max(50, node.width() * scaleX) // minimum width guard
+      } : t
+    ));
+  };
+
+  const checkDeselect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    // deselect when clicked on empty area or image
+    const clickedOnEmpty = e.target === e.target.getStage();
+    const clickedOnImage = e.target.attrs.image;
+    if (clickedOnEmpty || clickedOnImage) {
+      selectShape(null);
+    }
+  };
+
+  // Attach Transformer lazily
+  React.useEffect(() => {
+    if (selectedId && transformerRef.current && stageRef.current) {
+      const selectedNode = stageRef.current.findOne(`#${selectedId}`);
+      if (selectedNode) {
+        transformerRef.current.nodes([selectedNode]);
+        transformerRef.current.getLayer()?.batchDraw();
+      }
+    }
+  }, [selectedId, texts]);
 
   const handleExport = () => {
     if (!stageRef.current) return;
@@ -80,6 +130,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
               height={dimensions.height * scale} 
               scaleX={scale} 
               scaleY={scale}
+              onMouseDown={checkDeselect}
+              onTouchStart={checkDeselect}
               ref={stageRef}
             >
               <Layer>
@@ -97,16 +149,36 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
                     x={textItem.x}
                     y={textItem.y}
                     draggable
+                    onClick={() => selectShape(textItem.id)}
+                    onTap={() => selectShape(textItem.id)}
+                    onDragStart={() => selectShape(textItem.id)}
                     onDragEnd={(e) => handleDragEnd(textItem.id, e)}
+                    onTransformEnd={handleTransformEnd}
                     fontSize={textItem.fontSize || globalFontSize}
                     fontFamily="'Microsoft YaHei', 'PingFang SC', sans-serif"
                     fontStyle="bold"
                     fill="#2c221b" // Dark brown/grey matching the comic tone
-                    width={450} // Wider max-width to allow manual \n formatting without premature auto-wrap
+                    width={textItem.width || 450} // Defaults to 450 unless transformed
                     align="left" // The reference image uses left alignment for multi-line bubbles
                     lineHeight={1.4}
                   />
                 ))}
+                
+                {selectedId && (
+                  <Transformer
+                    ref={transformerRef}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    boundBoxFunc={(oldBox: any, newBox: any) => {
+                      // limit shrink
+                      if (newBox.width < 50) {
+                        return oldBox;
+                      }
+                      return newBox;
+                    }}
+                    enabledAnchors={['middle-left', 'middle-right']} // Only allow horizontal width changes
+                    rotateEnabled={false} // Disable rotation for cleaner typography bounds
+                  />
+                )}
               </Layer>
             </Stage>
          </div>
