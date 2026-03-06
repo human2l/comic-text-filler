@@ -43,9 +43,19 @@ export default function ComicCanvas({ imageSrc, texts, setTexts }: ComicCanvasPr
     document.body.removeChild(link);
   };
 
-  // We limit the max rendered UI width so it fits perfectly on screen
-  // But maintain intrinsic properties and scaling internally
-  const scale = imageSrc ? Math.min(1, 800 / dimensions.width) : 1;
+  // We limit the max rendered UI width & height so it fits perfectly on screen
+  // But maintain intrinsic properties and scaling internally for export
+  // Assuming the user viewport has a maximum height constraint (e.g., 600px available vertically)
+  const availableWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.6, 800) : 800;
+  const availableHeight = typeof window !== 'undefined' ? window.innerHeight * 0.75 : 600;
+
+  const scale = imageSrc 
+    ? Math.min(
+        1, 
+        availableWidth / dimensions.width,
+        availableHeight / dimensions.height
+      ) 
+    : 1;
 
   return (
     <div className="flex flex-col items-center">
