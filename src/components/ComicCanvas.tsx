@@ -197,6 +197,13 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     ref={transformerRef}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     boundBoxFunc={(oldBox: any, newBox: any) => {
+                      // Since we only use bottom-right anchor, top-left (x, y) must be strictly pinned.
+                      // Any mutation of x or y means the user has dragged past the top/left boundary 
+                      // and the Transformer is attempting to slide or flip the node.
+                      if (Math.abs(newBox.x - oldBox.x) > 0.5 || Math.abs(newBox.y - oldBox.y) > 0.5) {
+                        return oldBox;
+                      }
+                      
                       // limit shrink
                       if (newBox.width < 30 || newBox.height < 20) {
                         return oldBox;
@@ -206,7 +213,6 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     enabledAnchors={['bottom-right']} // Only allow bottom right resize
                     keepRatio={false} // Let the user resize width and height independently
                     rotateEnabled={false} // Disable rotation for cleaner typography bounds
-                    flipEnabled={false} // Prevent anchor inversion when dragging past bounds
                   />
                 )}
               </Layer>
