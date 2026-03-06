@@ -11,8 +11,8 @@ const ComicCanvas = dynamic(() => import('@/components/ComicCanvas'), {
 });
 
 const defaultJSON = `[
-  { "id": "t1", "text": "布布：今天好累啊...", "x": 100, "y": 150 }, 
-  { "id": "t2", "text": "一二：吃口草莓蛋糕吧！", "x": 250, "y": 300 }
+  { "id": "t1", "text": "但如果是你消失了，\\n我的世界会彻底停\\n转的。", "x": 160, "y": 120 }, 
+  { "id": "t2", "text": "在浩瀚的宇宙里，我们或许渺小。", "x": 80, "y": 910 }
 ]`;
 
 interface ComicText {
@@ -20,11 +20,13 @@ interface ComicText {
   text: string;
   x: number;
   y: number;
+  fontSize?: number;
 }
 
 export default function Home() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [jsonInput, setJsonInput] = useState<string>(defaultJSON);
+  const [globalFontSize, setGlobalFontSize] = useState<number>(44);
   
   // Initially we parse default json to texts 
   const [texts, setTexts] = useState<ComicText[]>(JSON.parse(defaultJSON) as ComicText[]);
@@ -111,6 +113,21 @@ export default function Home() {
               onChange={(e) => setJsonInput(e.target.value)}
               spellCheck={false}
             />
+            <div className="mb-4">
+              <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
+                <span>Global Font Size</span>
+                <span className="text-blue-600 font-bold">{globalFontSize}px</span>
+              </label>
+              <input 
+                type="range" 
+                min="20" 
+                max="80" 
+                value={globalFontSize} 
+                onChange={(e) => setGlobalFontSize(parseInt(e.target.value))}
+                className="w-full accent-blue-600"
+              />
+            </div>
+            
             <button 
               onClick={parseJsonTexts}
               className="w-full px-4 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition active:scale-[98%]"
@@ -124,7 +141,7 @@ export default function Home() {
         {/* Workspace: Renderer */}
         <div className="w-full xl:w-2/3 flex flex-col items-center justify-center min-h-0 bg-gray-200/50 p-4 rounded-3xl border border-gray-300/50 flex-1 relative overflow-hidden">
            <div className="w-full h-full flex items-center justify-center overflow-auto">
-             <ComicCanvas imageSrc={imageSrc} texts={texts} setTexts={setTexts} />
+             <ComicCanvas imageSrc={imageSrc} texts={texts} setTexts={setTexts} globalFontSize={globalFontSize} />
            </div>
         </div>
       </div>

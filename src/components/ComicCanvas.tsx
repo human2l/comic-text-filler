@@ -7,11 +7,12 @@ import useImage from 'use-image';
 
 interface ComicCanvasProps {
   imageSrc: string | null;
-  texts: { id: string; text: string; x: number; y: number }[];
-  setTexts: React.Dispatch<React.SetStateAction<{ id: string; text: string; x: number; y: number }[]>>;
+  texts: { id: string; text: string; x: number; y: number; fontSize?: number }[];
+  setTexts: React.Dispatch<React.SetStateAction<{ id: string; text: string; x: number; y: number; fontSize?: number }[]>>;
+  globalFontSize: number;
 }
 
-export default function ComicCanvas({ imageSrc, texts, setTexts }: ComicCanvasProps) {
+export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize }: ComicCanvasProps) {
   // Use 'anonymous' string for Cross-Origin resource sharing if using external URLs 
   const [image] = useImage(imageSrc || '', 'anonymous');
   
@@ -97,14 +98,13 @@ export default function ComicCanvas({ imageSrc, texts, setTexts }: ComicCanvasPr
                     y={textItem.y}
                     draggable
                     onDragEnd={(e) => handleDragEnd(textItem.id, e)}
-                    fontSize={36}
-                    fontFamily="'M PLUS Rounded 1c', 'Courier New', sans-serif"
-                    fill="#1a1a1a"
-                    stroke="#ffffff" // Subtle white outline for legibility usually
-                    strokeWidth={1}
-                    width={320} // Triggers Auto Word Wrap inside bubble limits
-                    align="center"
-                    lineHeight={1.3}
+                    fontSize={textItem.fontSize || globalFontSize}
+                    fontFamily="'Microsoft YaHei', 'PingFang SC', sans-serif"
+                    fontStyle="bold"
+                    fill="#2c221b" // Dark brown/grey matching the comic tone
+                    width={450} // Wider max-width to allow manual \n formatting without premature auto-wrap
+                    align="left" // The reference image uses left alignment for multi-line bubbles
+                    lineHeight={1.4}
                   />
                 ))}
               </Layer>
