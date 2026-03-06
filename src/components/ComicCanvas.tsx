@@ -219,7 +219,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                     fill="#2c221b" // Dark brown/grey matching the comic tone
                     width={textItem.width || 450} // Defaults to 450 unless transformed
                     height={textItem.height} // Auto-height if undefined
-                    align="left" // The reference image uses left alignment for multi-line bubbles
+                    align="center" // Change default alignment to center
                     verticalAlign="top"
                     lineHeight={1.4}
                   />
