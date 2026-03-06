@@ -40,21 +40,28 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
     ));
   };
 
-  const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
-    // Transfomer changes scale, we need to convert it back to width for native text wrap
+  const handleTransform = (e: Konva.KonvaEventObject<Event>) => {
+    // This runs continuously DURING the drag.
+    // Transfomer changes scale, we need to convert it back to width for native text wrap natively
     const node = e.target;
     const scaleX = node.scaleX();
+    const newWidth = Math.max(50, node.width() * scaleX);
     
     // reset scale to 1 and update width natively for pure Konva Text reflow
     node.scaleX(1);
     node.scaleY(1);
+    node.width(newWidth);
+  };
 
+  const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    // Save the final transformed state back to React state so it persists
+    const node = e.target;
     setTexts(texts.map(t => 
       t.id === node.id() ? { 
         ...t, 
         x: node.x(), 
         y: node.y(),
-        width: Math.max(50, node.width() * scaleX) // minimum width guard
+        width: node.width() // At this point, node.width() is already the real new width because of handleTransform
       } : t
     ));
   };
@@ -153,6 +160,7 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize 
                     onTap={() => selectShape(textItem.id)}
                     onDragStart={() => selectShape(textItem.id)}
                     onDragEnd={(e) => handleDragEnd(textItem.id, e)}
+                    onTransform={handleTransform}
                     onTransformEnd={handleTransformEnd}
                     fontSize={textItem.fontSize || globalFontSize}
                     fontFamily="'Microsoft YaHei', 'PingFang SC', sans-serif"
