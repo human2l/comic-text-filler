@@ -151,26 +151,6 @@ export default function Home() {
                 className="w-full accent-blue-600"
               />
             </div>
-
-            {selectedId && (
-              <div className="mb-4 p-4 bg-orange-50 border border-orange-100 rounded-lg">
-                <label className="flex justify-between text-sm font-medium text-orange-800 mb-2">
-                  <span>Selected Text Size</span>
-                  <span className="font-bold">{texts.find(t => t.id === selectedId)?.fontSize || globalFontSize}px</span>
-                </label>
-                <input 
-                  type="range" 
-                  min="10" 
-                  max="100" 
-                  value={texts.find(t => t.id === selectedId)?.fontSize || globalFontSize} 
-                  onChange={(e) => {
-                    const newSize = parseInt(e.target.value);
-                    setTexts(texts.map(t => t.id === selectedId ? { ...t, fontSize: newSize } : t));
-                  }}
-                  className="w-full accent-orange-600"
-                />
-              </div>
-            )}
           </div>
           
         </div>

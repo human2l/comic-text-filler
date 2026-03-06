@@ -130,6 +130,8 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
     availableWidth / dimensions.width,
     availableHeight / dimensions.height
   );
+  
+  const selectedTextObj = texts.find(t => t.id === selectedId);
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
@@ -217,6 +219,39 @@ export default function ComicCanvas({ imageSrc, texts, setTexts, globalFontSize,
                 )}
               </Layer>
             </Stage>
+            
+            {/* Inline floating toolbar for selected text */}
+            {selectedTextObj && (
+              <div 
+                className="absolute bg-white/90 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-gray-200 rounded-xl p-2.5 flex items-center gap-2 z-10 transition-opacity"
+                style={{
+                  left: Math.max(10, Math.min(selectedTextObj.x * scale, (dimensions.width * scale) - 200)),
+                  top: selectedTextObj.y * scale - 55 < 0 
+                    ? selectedTextObj.y * scale + (selectedTextObj.height || 50) * scale + 15 
+                    : selectedTextObj.y * scale - 55,
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <div className="flex flex-col text-[10px] leading-none text-gray-500 font-bold uppercase tracking-wider justify-center">
+                   <span>Size</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  value={selectedTextObj.fontSize || globalFontSize} 
+                  onChange={(e) => {
+                    const newSize = parseInt(e.target.value);
+                    setTexts(texts.map(t => t.id === selectedId ? { ...t, fontSize: newSize } : t));
+                  }}
+                  className="w-24 accent-orange-500 cursor-pointer"
+                />
+                <span className="text-xs font-mono font-bold text-gray-800 w-6 text-right">
+                  {selectedTextObj.fontSize || globalFontSize}
+                </span>
+              </div>
+            )}
          </div>
       ) : (
         <div 
